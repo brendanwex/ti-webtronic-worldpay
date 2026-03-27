@@ -25,7 +25,7 @@
 
     "extra": {
         "tastyigniter-extension": {
-            "code": "webtronicie.wordlpay",
+            "code": "webtronicie.worldpay",
             "name": "Webtronic WorldPay HPP",
             "icon": {
                 "image": "fa fa-credit-card",
