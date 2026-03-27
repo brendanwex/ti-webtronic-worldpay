@@ -229,6 +229,10 @@ class WorldPay extends BasePaymentGateway
 
         curl_close($curl);
 
+
+        Log::info(json_encode($payload));
+
+
         if ($error) {
 
             return ['status' => 'error', 'response' => $error];
