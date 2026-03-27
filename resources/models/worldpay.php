@@ -98,8 +98,8 @@ return [
     ],
     'rules' => [
         ['transaction_mode', 'Transaction Mode', 'string'],
-        ['live_api_key', 'Live API Key', 'nullable|required_if:transaction_mode,live|string'],
-        ['test_api_key', 'Test API Key', 'nullable|required_if:transaction_mode,test|string'],
+        ['live_username', 'Live API Key', 'nullable|required_if:transaction_mode,live|string'],
+        ['test_username', 'Test API Key', 'nullable|required_if:transaction_mode,test|string'],
         ['order_fee_type', 'lang:igniter.payregister::default.label_order_fee_type', 'integer'],
         ['order_fee', 'lang:igniter.payregister::default.label_order_fee', 'nullable|numeric'],
         ['order_total', 'lang:igniter.payregister::default.label_order_total', 'nullable|numeric'],
