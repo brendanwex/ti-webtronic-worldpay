@@ -254,10 +254,12 @@ class WorldPay extends BasePaymentGateway
         $returnUrl = $this->makeEntryPointUrl('worldpay_return_url') . '/' . $order->hash;
         $returnUrl .= '?redirect=' . array_get($data, 'successPage') . '&cancel=' . array_get($data, 'cancelPage');
 
+
+
         $fields = [
             'amount' => [
                 'currency' => currency()->getUserCurrency(),
-                'value' => number_format($order->order_total, 2, '.', ''),
+                'value' => (int)(number_format($order->order_total, 2, '.', '') * 100)
             ],
             'description' => 'Payment for Order ' . $order->order_id,
             'metadata' => [
