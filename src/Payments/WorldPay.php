@@ -23,6 +23,15 @@ class WorldPay extends BasePaymentGateway
     public $worldpayLiveEndpoint = "https://access.worldpay.com/payment_pages";
 
 
+
+    #[Override]
+    public function beforeRenderPaymentForm($host, $controller): void
+    {
+        $controller->addJs('//payments.worldpay.com/resources/hpp/integrations/embedded/js/hpp-embedded-integration-library.js', 'worldpay-hpp-js');
+        $controller->addJs('webtronicie.worldpay::/js/worldpay.js', 'worldpay-js');
+    }
+
+
     #[Override]
     public function defineFieldsConfig(): string
     {
@@ -111,6 +120,35 @@ class WorldPay extends BasePaymentGateway
         }
 
         throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
+    }
+
+    public function getIframeUrl($order){
+
+
+        $fields = $this->getPaymentFormFields($order);
+
+
+        try {
+            $payment = $this->createPayment($fields);
+
+            //Log::info(json_encode($payment));
+
+            if ($payment['status'] === 'success') {
+
+                echo $payment['response']->url;
+            }else{
+
+                echo "";
+            }
+
+
+        } catch (Exception $ex) {
+            $order->logPaymentAttempt('Payment error -> ' . $ex->getMessage(), 0, $fields);
+        }
+
+
+
+
     }
 
     public function processReturnUrl($params)
