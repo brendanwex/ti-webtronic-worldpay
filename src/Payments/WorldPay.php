@@ -214,7 +214,7 @@ class WorldPay extends BasePaymentGateway
 
         curl_setopt_array($curl, [
             CURLOPT_HTTPHEADER => [
-                "Authorization: BasicAuth ".$this->getToken(),
+                "Authorization: BasicAuth {$this->getToken()}",
                 "Content-Type: application/vnd.worldpay.payment_pages-v1.hal+json",
                 "WP-CorrelationId: joannescafe"
             ],
@@ -230,7 +230,7 @@ class WorldPay extends BasePaymentGateway
         curl_close($curl);
 
 
-        Log::info(json_encode($payload));
+        //Log::info(json_encode($payload));
 
 
         if ($error) {
