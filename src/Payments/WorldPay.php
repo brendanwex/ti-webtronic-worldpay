@@ -230,7 +230,7 @@ class WorldPay extends BasePaymentGateway
         curl_close($curl);
 
 
-        //Log::info(json_encode($payload));
+        Log::info(json_encode($curl));
 
 
         if ($error) {
