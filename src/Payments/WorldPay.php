@@ -188,13 +188,16 @@ class WorldPay extends BasePaymentGateway
 
         $curl = curl_init();
 
+        //remove special characters from site name
+        $site_name =  preg_replace('/[^A-Za-z0-9]/', '', setting('site_name'));
+
         $payload = array(
             "transactionReference" => 'Order-'.$fields['metadata']['order_id'],
             "merchant" => array(
                 "entity" => $this->getAccount()
             ),
             "narrative" => array(
-                "line1" => setting('site_name')
+                "line1" => $site_name
             ),
             "value" => array(
                 "currency" => $fields['amount']['currency'],
