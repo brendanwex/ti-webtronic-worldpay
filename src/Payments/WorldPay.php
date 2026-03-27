@@ -65,8 +65,9 @@ class WorldPay extends BasePaymentGateway
 
     public function getToken(){
 
-        return base64_encode($this->getUsername().":".$this->getPassword());
+        //return base64_encode($this->getUsername().":".$this->getPassword());
 
+        return "dzZ3V3dHSGMwMnZPako2YTpzTDRxQ1cyMjRrV2dpV3lVSHlkUlVaQlRuSkxhaDJxS2hGRFVzczdiWno4dEJsQjVQMTVtQXVpaUJ0UlRuSWtC";
     }
 
     /**
