@@ -93,7 +93,7 @@ class WorldPay extends BasePaymentGateway
 
             if ($payment['status'] === 'success') {
 
-                session()->put('worldpay.check_url', $payment['response']['_links']['_self']['href']);
+                session()->put('worldpay.check_url', $payment['response']->links->_self->href);
 
                 return Redirect::to($payment['response']->url);
             }
