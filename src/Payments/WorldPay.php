@@ -126,6 +126,7 @@ class WorldPay extends BasePaymentGateway
         Log::info(session()->get('worldpay.check_url'));
         $payment = $this->checkResult(session()->get('worldpay.check_url'));
 
+        Log::info(json_encode($payment));
 
         try {
             throw_unless($order, new ApplicationException('No order found'));
@@ -137,7 +138,7 @@ class WorldPay extends BasePaymentGateway
 
             throw_if($order->isPaymentProcessed(), new ApplicationException('Payment has already been processed'));
 
-            if ($payment['status'] == 'success' && $payment['response']->lastEvent == 'saleSucceeded' && $payment['response']->transactionReference == $order->order_id) {
+            if ($payment['status'] == 'success' && $payment['response']->transactionReference == "ORDER".$order->order_id) {
                 $order->logPaymentAttempt('Payment successful', 1, [], [
                     'id' => $payment['response']->paymentId,
                     'status' => 'success',
@@ -173,7 +174,8 @@ class WorldPay extends BasePaymentGateway
             CURLOPT_HTTPHEADER => [
                 "Authorization: Basic ".$this->getToken(),
                 "Content-Type: application/vnd.worldpay.payment_pages-v1.hal+json",
-                "WP-CorrelationId: joannescafe"
+                "WP-CorrelationId: joannescafe",
+                "Accept: application/vnd.worldpay.payment_pages-v1.hal+json",
             ],
         ]);
 
@@ -202,7 +204,7 @@ class WorldPay extends BasePaymentGateway
         $site_name =  preg_replace('/[^A-Za-z0-9]/', '', setting('site_name'));
 
         $payload = array(
-            "transactionReference" => 'Order-'.$fields['metadata']['order_id'],
+            "transactionReference" => 'ORDER'.$fields['metadata']['order_id'],
             "merchant" => array(
                 "entity" => $this->getAccount()
             ),
