@@ -92,14 +92,13 @@ class WorldPay extends BasePaymentGateway
             $payment = $this->createPayment($fields);
 
 
-            Log::info(json_encode($payment));
+            //Log::info(json_encode($payment));
 
             if ($payment['status'] === 'success') {
 
+                session()->put('worldpay.check_url', $payment['response']->_links->self->href);
 
-                session()->put('worldpay.check_url', $payment['response']->links->_self->href);
-
-                Redirect::to($payment['response']->url);
+               return Redirect::to($payment['response']->url);
             }
 
             $order->logPaymentAttempt('Payment error -> Failed to create payment redirect link', 0, $fields, [
@@ -233,12 +232,6 @@ class WorldPay extends BasePaymentGateway
 
         curl_close($curl);
 
-
-        Log::info(json_encode([
-            "Authorization: Basic ".$this->getToken(),
-            "Content-Type: application/vnd.worldpay.payment_pages-v1.hal+json",
-            "WP-CorrelationId: joannescafe"
-        ]));
 
 
         if ($error) {
