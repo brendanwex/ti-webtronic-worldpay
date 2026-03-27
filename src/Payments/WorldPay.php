@@ -99,7 +99,7 @@ class WorldPay extends BasePaymentGateway
 
                 session()->put('worldpay.check_url', $payment['response']->links->_self->href);
 
-                return Redirect::to($payment['response']->url);
+                Redirect::to($payment['response']->url);
             }
 
             $order->logPaymentAttempt('Payment error -> Failed to create payment redirect link', 0, $fields, [
