@@ -189,7 +189,7 @@ class WorldPay extends BasePaymentGateway
         $curl = curl_init();
 
         $payload = array(
-            "transactionReference" => $fields['metadata']['order_id'],
+            "transactionReference" => 'Order '.$fields['metadata']['order_id'],
             "merchant" => array(
                 "entity" => $this->getAccount()
             ),
