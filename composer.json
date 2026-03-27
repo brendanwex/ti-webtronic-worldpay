@@ -1,0 +1,52 @@
+{
+    "name": "webtronicie/ti-webtronic-worldpay",
+    "type": "tastyigniter-package",
+    "description": "SAccept payments using WorldPay HPP!",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Webtronic"
+        }
+    ],
+    "keywords": [
+        "tastyigniter",
+        "worldpay"
+    ],
+    "require": {
+        "tastyigniter/core": "^v4.0",
+        "tastyigniter/ti-ext-cart": "^4.0"
+    },
+
+    "autoload": {
+        "psr-4": {
+            "WebtronicIE\\WorldPay\\": "src/"
+        }
+    },
+
+    "extra": {
+        "tastyigniter-extension": {
+            "code": "webtronicie.wordlpay",
+            "name": "Webtronic WorldPay HPP",
+            "icon": {
+                "image": "fa fa-credit-card",
+                "backgroundColor": "#ff1f3e",
+                "color": "#FFFFFF"
+            },
+            "homepage": "https://webtronic.ie/"
+        },
+        "branch-alias": {
+            "dev-master": "1.0"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true,
+            "composer/installers": true
+        },
+        "sort-packages": true
+    }
+
+}
