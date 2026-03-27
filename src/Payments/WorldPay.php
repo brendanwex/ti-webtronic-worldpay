@@ -167,6 +167,11 @@ class WorldPay extends BasePaymentGateway
             CURLOPT_URL => $result_url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CUSTOMREQUEST => "GET",
+            CURLOPT_HTTPHEADER => [
+                "Authorization: Basic ".$this->getToken(),
+                "Content-Type: application/vnd.worldpay.payment_pages-v1.hal+json",
+                "WP-CorrelationId: joannescafe"
+            ],
         ]);
 
         $response = curl_exec($curl);
@@ -211,6 +216,29 @@ class WorldPay extends BasePaymentGateway
                 "errorURL" => $fields['redirectUrl'],
                 "cancelURL" => $fields['redirectUrl'],
                 "expiryURL" => $fields['redirectUrl']
+            ),
+            "hostedProperties" => array(
+                "showBillingAddress" => "HIDE",
+                "showShippingAddress" => "HIDE",
+                "showCountryList" => "false",
+                "showLanguageList" => "false",
+                "showContactDetails" => "HIDE",
+                "sendURLParameters" => "true",
+                "showPoweredByWorldPay" => "true",
+                "showCancelButton" => "true",
+                "showChangePaymentMethodButton" => "false",
+                "disableStrictUrls" => "true",
+                "showHeader" => "true",
+                "showFooter" => "true",
+                "showCardIcons" => "false",
+                "showCardholderName" => "true",
+                "showPaymentDetailsHeader" => "true",
+                "passBackErrorReasons" => "true",
+                "maskCardDetails" => "false",
+                "googlePayButtonColour" => "black",
+                "googlePayButtonLabel" => "long",
+                "applePayButtonType" => "plain",
+                "applePayButtonStyle" => "black"
             ),
 
         );
