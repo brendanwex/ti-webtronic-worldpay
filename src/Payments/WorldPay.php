@@ -19,8 +19,8 @@ class WorldPay extends BasePaymentGateway
 
 
     public static ?string $paymentFormView = 'webtronicie.worldpay::_partials.worldpay.payment_form';
-    public $worldpayTestEndpoint = "https://try.access.worldpay.com";
-    public $worldpayLiveEndpoint = "https://access.worldpay.com";
+    public $worldpayTestEndpoint = "https://try.access.worldpay.com/payment_pages";
+    public $worldpayLiveEndpoint = "https://access.worldpay.com/payment_pages";
 
 
     #[Override]
