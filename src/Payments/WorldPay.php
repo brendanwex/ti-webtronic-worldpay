@@ -28,7 +28,7 @@ class WorldPay extends BasePaymentGateway
     public function beforeRenderPaymentForm($host, $controller): void
     {
         $controller->addJs('//payments.worldpay.com/resources/hpp/integrations/embedded/js/hpp-embedded-integration-library.js', 'worldpay-hpp-js');
-        $controller->addJs('webtronicie.worldpay::/js/worldpay.js', 'worldpay-js');
+        $controller->addJs('webtronicie.worldpay::/js/process.worldpay.js', 'worldpay-js');
     }
 
 

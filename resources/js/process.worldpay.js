@@ -41,8 +41,12 @@
     }
 
     ProcessWorldPay.prototype.submitFormHandler = function (event) {
-        var self = this,
-            $form = this.$checkoutForm
+
+
+        // Prevent the form from submitting with the default action
+        event.preventDefault()
+
+        var self = this, $form = this.$checkoutForm
 
         if (this.$checkoutFormContainer.checkout('selectedPaymentInput').val() !== 'worldpay') return
 
@@ -50,18 +54,17 @@
 
 
 
-        // Prevent the form from submitting with the default action
-        event.preventDefault()
+
 
         self.$checkoutBtn.prop('disabled', true)
 
         var customOptions = {
             url: self.$iframe.data('wp-iframe'),
             type: 'lightbox',
-            inject: 'onload',
             target: 'worldpay-frame',
             accessibility: true,
-            debug: false,
+            debug: true,
+            trigger : "checkout-form"
         };
         // Initialize the library and pass options
         var libraryObject = new WPCL.Library();
