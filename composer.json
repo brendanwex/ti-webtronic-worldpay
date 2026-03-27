@@ -1,7 +1,7 @@
 {
     "name": "webtronicie/ti-webtronic-worldpay",
     "type": "tastyigniter-package",
-    "description": "SAccept payments using WorldPay HPP!",
+    "description": "Accept payments using WorldPay HPP!",
     "license": "MIT",
     "authors": [
         {
