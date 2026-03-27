@@ -65,7 +65,7 @@ class WorldPay extends BasePaymentGateway
 
     public function getToken(){
 
-        return base64_encode($this->getUsername().$this->getAccount());
+        return base64_encode($this->getUsername().$this->getPassword());
 
     }
 
@@ -216,8 +216,7 @@ class WorldPay extends BasePaymentGateway
             CURLOPT_HTTPHEADER => [
                 "Authorization: BasicAuth ".$this->getToken(),
                 "Content-Type: application/vnd.worldpay.payment_pages-v1.hal+json",
-                "User-Agent: string",
-                "WP-CorrelationId: string"
+                "WP-CorrelationId: joannescafe"
             ],
             CURLOPT_POSTFIELDS => json_encode($payload),
             CURLOPT_URL => $this->getEndPoint(),
