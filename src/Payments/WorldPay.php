@@ -7,16 +7,16 @@ use Exception;
 use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
-use Igniter\PayRegister\Concerns\WithPaymentRefund;
 use Igniter\PayRegister\Models\Payment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Log;
 use Override;
+
 
 class WorldPay extends BasePaymentGateway
 {
 
-    use WithPaymentRefund;
 
     public static ?string $paymentFormView = 'webtronicie.worldpay::_partials.worldpay.payment_form';
     public $worldpayTestEndpoint = "https://try.access.worldpay.com";
@@ -91,7 +91,10 @@ class WorldPay extends BasePaymentGateway
             $payment = $this->createPayment($fields);
 
 
+            Log::info(json_encode($payment));
+
             if ($payment['status'] === 'success') {
+
 
                 session()->put('worldpay.check_url', $payment['response']->links->_self->href);
 
