@@ -83,7 +83,7 @@
 
     $.fn.processWorldPay = function (option) {
         var $this = $(this).first()
-        var options = $.extend(true, {}, ProcessStripe.DEFAULTS, $this.data(), typeof option == 'object' && option)
+        var options = $.extend(true, {}, ProcessWorldPay.DEFAULTS, $this.data(), typeof option == 'object' && option)
 
         return new ProcessWorldPay($this, options)
     }
