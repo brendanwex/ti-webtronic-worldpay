@@ -43,8 +43,7 @@
     ProcessWorldPay.prototype.submitFormHandler = function (event) {
 
 
-        // Prevent the form from submitting with the default action
-        event.preventDefault()
+
 
         var self = this, $form = this.$checkoutForm
 
@@ -53,7 +52,8 @@
         if (this.$iframe.data('wp-iframe') === '') return
 
 
-
+        // Prevent the form from submitting with the default action
+        event.preventDefault();
 
 
         self.$checkoutBtn.prop('disabled', true)
@@ -69,6 +69,9 @@
         // Initialize the library and pass options
         var libraryObject = new WPCL.Library();
         libraryObject.setup(customOptions);
+
+        //need this for some reason.
+        $("#checkout-form").click();
 
     }
 
