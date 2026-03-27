@@ -121,6 +121,9 @@ class WorldPay extends BasePaymentGateway
 
         $order = $this->createOrderModel()->whereHash($hash)->first();
 
+
+
+        Log::info(session()->get('worldpay.check_url'));
         $payment = $this->checkResult(session()->get('worldpay.check_url'));
 
 
@@ -182,6 +185,9 @@ class WorldPay extends BasePaymentGateway
         if ($error) {
             return ['status' => 'error', 'response' => $error];
         } else {
+
+            Log::info($response);
+
             return ['status' => 'success', 'response' => json_decode($response)];
         }
     }
