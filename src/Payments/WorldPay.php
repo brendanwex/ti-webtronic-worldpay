@@ -135,6 +135,8 @@ class WorldPay extends BasePaymentGateway
 
             if ($payment['status'] === 'success') {
 
+                session()->put('worldpay.check_url', $payment['response']->_links->self->href);
+
                 echo $payment['response']->url;
             }else{
 
@@ -159,9 +161,7 @@ class WorldPay extends BasePaymentGateway
 
         $order = $this->createOrderModel()->whereHash($hash)->first();
 
-
-
-        Log::info(session()->get('worldpay.check_url'));
+        //Log::info(session()->get('worldpay.check_url'));
         $payment = $this->checkResult(session()->get('worldpay.check_url'));
 
         Log::info(json_encode($payment));
@@ -211,9 +211,9 @@ class WorldPay extends BasePaymentGateway
             CURLOPT_CUSTOMREQUEST => "GET",
             CURLOPT_HTTPHEADER => [
                 "Authorization: Basic ".$this->getToken(),
-                "Content-Type: application/vnd.worldpay.payment_pages-v1.hal+json",
+                "Content-Type: application/json",
                 "WP-CorrelationId: joannescafe",
-                "Accept: application/vnd.worldpay.payment_pages-v1.hal+json",
+                "Accept: application/json",
             ],
         ]);
 
