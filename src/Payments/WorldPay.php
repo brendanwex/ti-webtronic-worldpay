@@ -208,13 +208,11 @@ class WorldPay extends BasePaymentGateway
         curl_setopt_array($curl, [
             CURLOPT_URL => $result_url,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST => "GET",
+            CURLOPT_CUSTOMREQUEST => "POST",
             CURLOPT_HTTPHEADER => [
                 "Authorization: Basic ".$this->getToken(),
                 "Content-Type: application/json",
-                "WP-CorrelationId: joannescafe",
-                "Accept: application/json",
-            ],
+                "WP-CorrelationId: joannescafe"],
         ]);
 
         $response = curl_exec($curl);
