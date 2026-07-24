@@ -238,7 +238,7 @@ class WorldPay extends BasePaymentGateway
 
         );
 
-        $ch = curl_init($this->baseUrl);
+        $ch = curl_init($this->getEndPoint());
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
