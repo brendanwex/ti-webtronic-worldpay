@@ -24,6 +24,7 @@ class WorldPay extends BasePaymentGateway
 
 
 
+
     #[Override]
     public function beforeRenderPaymentForm($host, $controller): void
     {
@@ -31,6 +32,11 @@ class WorldPay extends BasePaymentGateway
         $controller->addJs('webtronicie.worldpay::/js/process.worldpay.js', 'worldpay-js');
     }
 
+
+    public function wp_idempotency_key(){
+
+        return uniqid('', true);
+    }
 
     #[Override]
     public function defineFieldsConfig(): string
@@ -99,12 +105,12 @@ class WorldPay extends BasePaymentGateway
             $payment = $this->createPayment($order, $fields);
 
             Log::info(json_encode($payment));
+            Log::info(json_encode($this->getToken()));
+
 
             if ($payment['status'] === 'success') {
 
-                session()->put('worldpay.check_url', $payment['response']->_links->self->href);
-
-               return Redirect::to($payment['response']->url);
+               return Redirect::to($payment['redirect_url']);
             }
 
             $order->logPaymentAttempt('Payment error -> Failed to create payment redirect link', 0, $fields, [
@@ -202,7 +208,6 @@ class WorldPay extends BasePaymentGateway
     protected function createPayment($order, $fields)
     {
 
-        $curl = curl_init();
 
         //remove special characters from site name
         $site_name =  preg_replace('/[^A-Za-z0-9]/', '', setting('site_name'));
@@ -229,58 +234,55 @@ class WorldPay extends BasePaymentGateway
                 "cancelURL" => $fields['redirectUrl'],
                 "expiryURL" => $fields['redirectUrl']
             ),
-            "hostedProperties" => array(
-                "showBillingAddress" => "HIDE",
-                "showShippingAddress" => "HIDE",
-                "showCountryList" => "false",
-                "showLanguageList" => "false",
-                "showContactDetails" => "HIDE",
-                "sendURLParameters" => "true",
-                "showPoweredByWorldPay" => "true",
-                "showCancelButton" => "true",
-                "showChangePaymentMethodButton" => "false",
-                "disableStrictUrls" => "true",
-                "showHeader" => "true",
-                "showFooter" => "true",
-                "showCardIcons" => "false",
-                "showCardholderName" => "true",
-                "showPaymentDetailsHeader" => "true",
-                "passBackErrorReasons" => "true",
-                "maskCardDetails" => "false",
-                "googlePayButtonColour" => "black",
-                "googlePayButtonLabel" => "long",
-                "applePayButtonType" => "plain",
-                "applePayButtonStyle" => "black"
-            ),
+
 
         );
 
-        curl_setopt_array($curl, [
-            CURLOPT_HTTPHEADER => [
-                "Authorization: Basic ".$this->getToken(),
-                "Content-Type: application/vnd.worldpay.payment_pages-v1.hal+json",
-                "WP-CorrelationId: joannescafe"
-            ],
-            CURLOPT_POSTFIELDS => json_encode($payload),
-            CURLOPT_URL => $this->getEndPoint(),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST => "POST",
+        $ch = curl_init($this->baseUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Authorization: Basic ' . $this->getToken(),
+            'Content-Type: application/vnd.worldpay.payment_pages-v1.hal+json',
+            'Accept: application/vnd.worldpay.payment_pages-v1.hal+json',
+            "WP-CorrelationId: ".$this->wp_idempotency_key()
         ]);
 
-        $response = curl_exec($curl);
-        $error = curl_error($curl);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-        curl_close($curl);
-
-
-
-        if ($error) {
-
-            return ['status' => 'error', 'response' => $error];
-        } else {
-            return ['status' => 'success', 'response' => json_decode($response)];
-
+        if (curl_errno($ch)) {
+            $errorMsg = curl_error($ch);
+            curl_close($ch);
+            return ['status' => 'error', 'error' => 'Transport error: ' . $errorMsg];
         }
+
+
+        curl_close($ch);
+
+        $data = json_decode($response, true);
+
+        // 4. Handle response states based on expected HTTP responses (200 OK / 201 Created)
+        if ($httpCode === 201 || $httpCode === 200) {
+            if (isset($data['_links']['hpp:redirect']['href'])) {
+                return [
+                    'status' => 'success',
+                    'redirect_url' => $data['_links']['hpp:redirect']['href']
+                ];
+            }
+            return ['status' => 'error', 'error' => 'API response structure missing redirect href links.'];
+        }
+
+        // Return API error details if authentication or syntax structural checks fail
+        return [
+            'status' => 'error',
+            'http_code' => $httpCode,
+            'error' => $data['message'] ?? ($data['errorName'] ?? 'Unknown API Exception')
+        ];
+
+
+
     }
 
 
