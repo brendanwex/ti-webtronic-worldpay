@@ -22,6 +22,9 @@ class WorldPay extends BasePaymentGateway
     public $worldpayTestEndpoint = "https://try.access.worldpay.com/payment_pages";
     public $worldpayLiveEndpoint = "https://access.worldpay.com/payment_pages";
 
+    public $worldpayCheckEndpointTest = "https://try.access.worldpay.com/paymentQueries/payments?transactionReference=";
+
+    public $worldpayCheckEndpointLive = "https://access.worldpay.com/paymentQueries/payments?transactionReference=";
 
 
 
@@ -60,7 +63,13 @@ class WorldPay extends BasePaymentGateway
 
     public function getUsername()
     {
-        return $this->isTestMode() ? $this->model->test_useranme : $this->model->live_username;
+        return $this->isTestMode() ? $this->model->test_username : $this->model->live_username;
+    }
+
+
+    public function getCheckEndpoint($order_id)
+    {
+        return $this->isTestMode() ? $this->worldpayCheckEndpointTest.$order_id : $this->worldpayCheckEndpointLive.$order_id;
     }
 
     public function getPassword()
@@ -105,12 +114,12 @@ class WorldPay extends BasePaymentGateway
             $payment = $this->createPayment($order, $fields);
 
             Log::info(json_encode($payment));
-            Log::info(json_encode($this->getToken()));
+            // Log::info(json_encode($this->getToken()));
 
 
             if ($payment['status'] === 'success') {
 
-               return Redirect::to($payment['redirect_url']);
+                return Redirect::to($payment['redirect_url']);
             }
 
             $order->logPaymentAttempt('Payment error -> Failed to create payment redirect link', 0, $fields, [
@@ -136,7 +145,7 @@ class WorldPay extends BasePaymentGateway
         $order = $this->createOrderModel()->whereHash($hash)->first();
 
         //Log::info(session()->get('worldpay.check_url'));
-        $payment = $this->checkResult(session()->get('worldpay.check_url'));
+        $payment = $this->checkResult($this->getCheckEndpoint($order->order_id));
 
         Log::info(json_encode($payment));
 
@@ -186,7 +195,8 @@ class WorldPay extends BasePaymentGateway
             CURLOPT_HTTPHEADER => [
                 "Authorization: Basic ".$this->getToken(),
                 "Content-Type: application/json",
-                "WP-CorrelationId: joannescafe"],
+                "WP-CorrelationId: joannes"
+            ],
         ]);
 
         $response = curl_exec($curl);
@@ -213,7 +223,7 @@ class WorldPay extends BasePaymentGateway
         $site_name =  preg_replace('/[^A-Za-z0-9]/', '', setting('site_name'));
 
         $payload = array(
-            "transactionReference" => 'WEB-'.$order->order_id,
+            "transactionReference" => $order->order_id,
             "merchant" => array(
                 "entity" => $this->getAccount()
             ),
@@ -224,7 +234,7 @@ class WorldPay extends BasePaymentGateway
                 "currency" => $fields['amount']['currency'],
                 "amount" => $fields['amount']['value'],
             ),
-            "description" => $fields['description'],
+            "description" => 'Online Order',
 
             "resultURLs" => array(
                 "successURL" => $fields['redirectUrl'],
@@ -244,9 +254,8 @@ class WorldPay extends BasePaymentGateway
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Authorization: Basic ' . $this->getToken(),
-            'Content-Type: application/vnd.worldpay.payment_pages-v1.hal+json',
-            'Accept: application/vnd.worldpay.payment_pages-v1.hal+json',
-            "WP-CorrelationId: ".$this->wp_idempotency_key()
+            "Content-Type: application/vnd.worldpay.payment_pages-v1.hal+json",
+            "WP-CorrelationId: joannes"
         ]);
 
         $response = curl_exec($ch);
@@ -265,10 +274,13 @@ class WorldPay extends BasePaymentGateway
 
         // 4. Handle response states based on expected HTTP responses (200 OK / 201 Created)
         if ($httpCode === 201 || $httpCode === 200) {
-            if (isset($data['_links']['hpp:redirect']['href'])) {
+            if (isset($data['url'])) {
+
+                //session()->set('worldpay.check_url', $data['_links']['self']['href']);
+
                 return [
                     'status' => 'success',
-                    'redirect_url' => $data['_links']['hpp:redirect']['href']
+                    'redirect_url' => $data['url']
                 ];
             }
             return ['status' => 'error', 'error' => 'API response structure missing redirect href links.'];
