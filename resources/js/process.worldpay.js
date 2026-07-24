@@ -44,34 +44,18 @@
 
 
 
-
         var self = this, $form = this.$checkoutForm
 
         if (this.$checkoutFormContainer.checkout('selectedPaymentInput').val() !== 'worldpay') return
 
-        if (this.$iframe.data('wp-iframe') === '') return
-
 
         // Prevent the form from submitting with the default action
-        event.preventDefault();
-
+        event.preventDefault()
 
         self.$checkoutBtn.prop('disabled', true)
 
-        var customOptions = {
-            url: self.$iframe.data('wp-iframe'),
-            type: 'lightbox',
-            target: 'worldpay-frame',
-            accessibility: true,
-            debug: true,
-            trigger : "checkout-form"
-        };
-        // Initialize the library and pass options
-        var libraryObject = new WPCL.Library();
-        libraryObject.setup(customOptions);
+        $form.unbind('submitCheckoutForm').submit()
 
-        //need this for some reason.
-        $("#checkout-form").click();
 
     }
 

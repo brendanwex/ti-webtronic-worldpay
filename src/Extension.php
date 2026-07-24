@@ -22,7 +22,7 @@ class Extension extends BaseExtension
             WorldPay::class => [
                 'code' => 'worldpay',
                 'name' => 'WorldPay',
-                'description' => 'Pay securely using WorldPay.',
+                'description' => 'Pay securely using WorldPay HPP.',
             ],
 
         ];
