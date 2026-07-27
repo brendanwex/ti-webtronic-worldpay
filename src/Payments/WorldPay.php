@@ -22,11 +22,6 @@ class WorldPay extends BasePaymentGateway
     public $worldpayTestEndpoint = "https://try.access.worldpay.com/payment_pages";
     public $worldpayLiveEndpoint = "https://access.worldpay.com/payment_pages";
 
-    public $worldpayCheckEndpointTest = "https://try.access.worldpay.com/paymentQueries/payments?transactionReference=";
-
-    public $worldpayCheckEndpointLive = "https://access.worldpay.com/paymentQueries/payments?transactionReference=";
-
-
 
     #[Override]
     public function beforeRenderPaymentForm($host, $controller): void
@@ -36,10 +31,7 @@ class WorldPay extends BasePaymentGateway
     }
 
 
-    public function wp_idempotency_key(){
 
-        return uniqid('', true);
-    }
 
     #[Override]
     public function defineFieldsConfig(): string
@@ -52,7 +44,7 @@ class WorldPay extends BasePaymentGateway
     {
         return [
             'worldpay_return_url' => 'processReturnUrl',
-            'worldpay_notify_url' => 'processNotifyUrl',
+            'worldpay_notify_url' => 'checkPaymentStatus',
         ];
     }
 
@@ -67,10 +59,6 @@ class WorldPay extends BasePaymentGateway
     }
 
 
-    public function getCheckEndpoint($order_id)
-    {
-        return $this->isTestMode() ? $this->worldpayCheckEndpointTest.$order_id : $this->worldpayCheckEndpointLive.$order_id;
-    }
 
     public function getPassword()
     {
@@ -114,7 +102,7 @@ class WorldPay extends BasePaymentGateway
             $payment = $this->createPayment($order, $fields);
 
             Log::info(json_encode($payment));
-            // Log::info(json_encode($this->getToken()));
+            Log::info(json_encode($fields));
 
 
             if ($payment['status'] === 'success') {
@@ -138,44 +126,44 @@ class WorldPay extends BasePaymentGateway
 
     public function processReturnUrl($params)
     {
+
+        Log::info(json_encode($_REQUEST));
+
+
+        //Let webhooks handle checks.
+
+
         $hash = $params[0] ?? null;
         $redirectPage = input('redirect') ?: 'checkout.checkout';
         $cancelPage = input('cancel') ?: 'checkout.checkout';
 
         $order = $this->createOrderModel()->whereHash($hash)->first();
 
-        //Log::info(session()->get('worldpay.check_url'));
-        $payment = $this->checkResult($this->getCheckEndpoint($order->order_id));
-
-        Log::info(json_encode($payment));
-
         try {
             throw_unless($order, new ApplicationException('No order found'));
+
 
             throw_if(
                 !($paymentMethod = $order->payment_method) || !$paymentMethod->getGatewayObject() instanceof WorldPay,
                 new ApplicationException('No valid payment method found'),
             );
 
-            throw_if($order->isPaymentProcessed(), new ApplicationException('Payment has already been processed'));
+            throw_if(
 
-            if ($payment['status'] == 'success' && $payment['response']->transactionReference == "ORDER".$order->order_id) {
-                $order->logPaymentAttempt('Payment successful', 1, [], [
-                    'id' => $payment['response']->paymentId,
-                    'status' => 'success',
-                    'method' => 'worldpay',
-                    'amount' => $payment['response']->value->amount
-                ], true);
-                $order->updateOrderStatus($paymentMethod->order_status, ['notify' => false]);
-                $order->markAsPaymentProcessed();
-            }
+                !$order->isPaymentProcessed(),
+                new ApplicationException('Payment failed, please try again.'),
+            );
+
+
+
 
             return Redirect::to(page_url($redirectPage, [
                 'id' => $order->getKey(),
                 'hash' => $order->hash,
             ]));
+
         } catch (Exception $ex) {
-            $order?->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, [], request()->input());
+            $order?->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, [], []);
             flash()->warning($ex->getMessage())->important();
         }
 
@@ -185,34 +173,7 @@ class WorldPay extends BasePaymentGateway
 
 
 
-    protected function checkResult($result_url){
 
-        $curl = curl_init();
-        curl_setopt_array($curl, [
-            CURLOPT_URL => $result_url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST => "POST",
-            CURLOPT_HTTPHEADER => [
-                "Authorization: Basic ".$this->getToken(),
-                "Content-Type: application/json",
-                "WP-CorrelationId: joannes"
-            ],
-        ]);
-
-        $response = curl_exec($curl);
-        $error = curl_error($curl);
-
-        curl_close($curl);
-
-        if ($error) {
-            return ['status' => 'error', 'response' => $error];
-        } else {
-
-            Log::info($response);
-
-            return ['status' => 'success', 'response' => json_decode($response)];
-        }
-    }
 
 
     protected function createPayment($order, $fields)
@@ -304,6 +265,7 @@ class WorldPay extends BasePaymentGateway
         $returnUrl = $this->makeEntryPointUrl('worldpay_return_url') . '/' . $order->hash;
         $returnUrl .= '?redirect=' . array_get($data, 'successPage') . '&cancel=' . array_get($data, 'cancelPage');
 
+        $notifyUrl = $this->makeEntryPointUrl('worldpay_notify_url') . '/webhook';
 
 
         $fields = [
@@ -316,11 +278,52 @@ class WorldPay extends BasePaymentGateway
                 'order_id' => $order->order_id,
             ],
             'redirectUrl' => $returnUrl,
+            'notifyUrl' => $notifyUrl,
         ];
 
         $this->fireSystemEvent('webtronicie.worldpay.extendFields', [&$fields, $order, $data]);
 
         return $fields;
+    }
+
+
+    function checkPaymentStatus($params){
+
+        $endpoint = $params[0] ?? 'webhook';
+
+        $webhook = json_decode(file_get_contents("php://input"));
+
+        Log::info(json_encode($webhook));
+
+        $error_events = ['refused', 'expired', 'error'];
+
+        if($webhook && $webhook->eventDetails->type == 'authorized'){
+
+            $order = Order::query()->find($webhook->eventDetails->transactionReference);
+            if($order) {
+                $paymentMethod = $order->payment_method;
+                $order->logPaymentAttempt('Payment successful', 1, [], $paymentMethod, false);
+                $order->updateOrderStatus($paymentMethod->order_status, ['notify' => false]);
+                $order->markAsPaymentProcessed();
+            }else{
+                Log::error('Could not retrieve order from WorldPay webhook '.$webhook->eventDetails->downstreamReference);
+            }
+        }
+
+        if($webhook && in_array($webhook->eventDetails->type, $error_events)){
+
+            $order = Order::query()->find($webhook->eventDetails->transactionReference);
+            if($order) {
+                $paymentMethod = $order->payment_method;
+                $order->logPaymentAttempt('Payment failed', 0, ['error' => 'Card '.$webhook->eventDetails->type.' Login to WorldPay Dashboard for detailed information.'], $paymentMethod, false);
+                $order->updateOrderStatus(2, ['notify' => false]); //pending status
+            }else{
+                Log::error('Could not retrieve order from WorldPay webhook '.$webhook->eventDetails->downstreamReference);
+            }
+        }
+
+
+
     }
 
 }
