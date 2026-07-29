@@ -292,8 +292,9 @@ class WorldPay extends BasePaymentGateway
         $endpoint = $params[0] ?? 'webhook';
 
         $webhook = json_decode(file_get_contents("php://input"));
+        $headers = getallheaders();
 
-        Log::info(json_encode($webhook));
+        Log::info(json_encode(['headers' => $headers,  'payload' => $webhook]));
 
         $error_events = ['refused', 'expired', 'error'];
 
@@ -302,7 +303,7 @@ class WorldPay extends BasePaymentGateway
             $order = Order::query()->find($webhook->eventDetails->transactionReference);
             if($order) {
                 $paymentMethod = $order->payment_method;
-                $order->logPaymentAttempt('Payment successful', 1, [], $paymentMethod, false);
+                $order->logPaymentAttempt('Payment successful - WorldPay Ref: '.$webhook->eventDetails->downstreamReference, 1, [], $paymentMethod, false);
                 $order->updateOrderStatus($paymentMethod->order_status, ['notify' => false]);
                 $order->markAsPaymentProcessed();
             }else{
